@@ -18,12 +18,21 @@ import java.awt.image.ImageProducer;
 import java.awt.image.RGBImageFilter;
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
+
 import javax.imageio.ImageIO;
 import javax.swing.JButton;
 
+
 // 필드를 구성하는데 있어서 필요한 메서드들을 모아 놓은 부모(베이스) 클래스
 public abstract class BaseStage {
- 
+	
+	private game.battle.GameState gameState;
+	private game.battle.TurnManager turnManager;
+	private game.battle.CardExecutor cardExecutor;
+	private game.battle.CombatEngine combatEngine;
+	private game.battle.EnemyAI enemyAI;
+	
     protected Screen screen;
     protected int x = 1280 / 2;
     protected CardDragge boss;
@@ -52,6 +61,8 @@ public abstract class BaseStage {
         
         this.hand = new Hand();
         turnBtn();
+        
+        initBattle();
         
     }
     
@@ -339,13 +350,60 @@ public abstract class BaseStage {
 			
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				System.out.println("턴 종료");
-				turnTime = 60;
 				
-				// 보스 턴으로 넘기는
+				// 보스 턴으로 넘김
+				System.out.println("턴 종료");
+			    turnTime = 60;
+
+			    // 1) 플레이어 턴 종료 -> ENEMY 턴으로 전환
+			    printLog(turnManager.endTurn());
+
+			    // 2) ENEMY 턴 시작
+			    printLog(turnManager.startTurn());
+
+			    // 3) ENEMY 메인 페이즈(=AI) 실행
+			    printLog(enemyAI.playEnemyMainPhase());
+
+			    // 4) ENEMY 턴 종료 -> PLAYER 턴으로 전환
+			    printLog(turnManager.endTurn());
+
+			    // 5) PLAYER 턴 시작
+			    printLog(turnManager.startTurn());
+
+			    // 6) 전투 결과를 UI 슬롯에 반영(아래 sync 메서드 )
+			    syncBoardsToSlots();
+
+			    screen.repaint();
+
 			}
 		});
     	screen.add(endTurnBtn);
+    }
+    
+    private void syncBoardsToSlots() {
+        // 1) PLAYER 보드 -> playerSlots 
+        // 2) ENEMY 보드 -> bossSlots
+
+        // bossSlots 비우기
+        for (int i = 0; i < bossSlots.length; i++) {
+            if (bossSlots[i] != null) bossSlots[i].setCard(null);
+        }
+
+        List<game.battle.UnitState> enemyBoard = gameState.getPlayerState(game.battle.BattleSide.ENEMY).getBoard();
+        CardImageManager imgManager = CardImageManager.getInstance();
+        List<game.card.card> all = game.card.CardRepository.getAllCards();
+
+        for (int i = 0; i < enemyBoard.size() && i < bossSlots.length; i++) {
+            game.card.card base = enemyBoard.get(i).getBaseCard();
+
+            int imageIndex = 0;
+            for (int k = 0; k < all.size(); k++) {
+                if (all.get(k).getId().equals(base.getId())) { imageIndex = k; break; }
+            }
+
+            CardUI ui = new CardUI(base, imgManager.getCardImage(imageIndex), 0, 0);
+            bossSlots[i].setCard(ui);
+        }
     }
     
     public void showTurnBtn() {
@@ -373,5 +431,33 @@ public abstract class BaseStage {
     	g.drawString(timeText, btnX - 50, btnY - 10);
     }
     
+    private void printLog(game.battle.BattleLog log) {
+        if (log == null) return;
+        for (game.battle.BattleLogEntry e : log.getEntries()) {
+            System.out.println(e.getMessage());
+        }
+    }
+    
+    private void initBattle() {
+        // 영웅 생성
+        game.battle.HeroState pHero = new game.battle.HeroState("PLAYER");
+        game.battle.HeroState eHero = new game.battle.HeroState("ENEMY");
+
+        game.battle.PlayerBattleState p = new game.battle.PlayerBattleState(pHero);
+        game.battle.PlayerBattleState e = new game.battle.PlayerBattleState(eHero);
+
+        // 적 손패는 랜덤 10장
+        List<game.card.card> enemyHand = game.card.CardRepository.createShuffledDeck(10);
+        for (game.card.card c : enemyHand) e.addCardToHand(c);
+
+        this.gameState = new game.battle.GameState(p, e);
+        this.turnManager = new game.battle.TurnManager(gameState);
+        this.cardExecutor = new game.battle.CardExecutor(gameState);
+        this.combatEngine = new game.battle.CombatEngine(gameState);
+        this.enemyAI = new game.battle.EnemyAI(gameState);
+
+        // 플레이어 첫 턴 시작
+        printLog(turnManager.startTurn());
+    }
     
 }

@@ -1,7 +1,7 @@
 package game.battle;
 
 /**
- * 가장 단순한 피해량 계산 방식:
+ * 가장 단순한 피해량 계산
  * - 유닛의 공격력 그대로 피해로 사용
  */
 public class DefaultDamageCalculator implements DamageCalculator {

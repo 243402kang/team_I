@@ -6,44 +6,24 @@ import game.card.cardEffect;
 
 import java.util.List;
 
-/**
- * 카드를 실제로 "사용"했을 때 발생하는 전투 관련 로직을 처리하는 클래스입니다.
- *
- * 지원:
- * - 몬스터 카드 소환 → UnitState 생성 후 전장에 배치
- * - 일부 cardEffect 처리:
- *   - TAUNT (소환된 유닛에 도발)
- *   - DIRECT_ATTACK_PLAYER (영웅에게 직접 피해)
- *   - DAMAGE_TO_MONSTER (단일 적 유닛 피해)
- *
- * 무시되는 효과 (로그만 남기고 실제 효과 없음):
- *   - HEAL_PLAYER
- *   - BUFF_ATTACK / BUFF_DEFENSE
- *   - DEBUFF_ATTACK / DEBUFF_DEFENSE
- */
 public class CardExecutor {
 
     private final GameState gameState;
 
     public CardExecutor(GameState gameState) {
-        if (gameState == null) {
-            throw new IllegalArgumentException("GameState 는 null 일 수 없습니다.");
-        }
+        if (gameState == null) throw new IllegalArgumentException("GameState 는 null 일 수 없습니다.");
         this.gameState = gameState;
     }
 
-    public GameState getGameState() {
-        return gameState;
-    }
+    public GameState getGameState() { return gameState; }
 
-    /**
-     * 카드를 플레이(사용)하는 메인 메서드입니다.
-     */
+    /**UI 연결용: summonPosition(0~4)을 받아서 그 위치로 소환 */
     public BattleLog playCard(BattleSide side,
                               card card,
                               BattleSide targetSide,
                               TargetType targetType,
-                              int targetIndex) {
+                              int targetIndex,
+                              int summonPosition) {
 
         BattleLog log = new BattleLog();
 
@@ -54,30 +34,32 @@ public class CardExecutor {
 
         PlayerBattleState casterState = gameState.getPlayerState(side);
 
-        // 필드가 꽉 찼는지 먼저 체크 (마나 차감 전에!)
-        if (!casterState.canSummonMoreUnits()) {
-            log.add("[카드 사용 실패] 필드에는 최대 " +
-                    PlayerBattleState.MAX_BOARD_SIZE + " 마리까지만 소환할 수 있습니다.");
-            return log;
-        }
-
-        // 마나 체크
         if (casterState.getCurrentMana() < card.getCost()) {
             log.add("[카드 사용 실패] 마나가 부족하여 \"" + card.getName() +
                     "\" 카드를 사용할 수 없습니다. (필요 코스트=" + card.getCost() + ")");
             return log;
         }
 
-        // 마나 차감
+        if (!casterState.canSummonMoreUnits()) {
+            log.add("[카드 사용 실패] 필드에는 최대 " +
+                    PlayerBattleState.MAX_BOARD_SIZE + " 마리까지만 소환할 수 있습니다.");
+            return log;
+        }
+
         casterState.setCurrentMana(casterState.getCurrentMana() - card.getCost());
+
+        //손패에 있으면 자동 제거 (UI/AI 둘 다 안전)
+        if (casterState.getHand().contains(card)) {
+            casterState.removeCardFromHand(card);
+        }
+
         log.add("[카드 사용] " + side + " 이(가) \"" + card.getName() +
                 "\" (코스트 " + card.getCost() + ") 카드를 사용했습니다.");
 
-        // 몬스터 카드라 가정하고 전장에 소환
         UnitState summoned = new UnitState(card);
-        summoned.applyCardEffectsOnSummon(card.getEffects()); // 도발 등만 반영
+        summoned.applyCardEffectsOnSummon(card.getEffects());
 
-        boolean summonedOk = casterState.summonUnit(summoned);
+        boolean summonedOk = casterState.summonUnitAt(summoned, summonPosition);
         if (!summonedOk) {
             log.add("[소환 실패] 필드가 가득 차 있어 \"" + summoned.getName() +
                     "\" 을(를) 더 이상 소환할 수 없습니다.");
@@ -86,29 +68,33 @@ public class CardExecutor {
 
         log.add("[소환] \"" + summoned.getName() + "\" 이(가) 전장에 소환되었습니다. " +
                 "(공격력=" + summoned.getAttack() +
-                ", 체력=" + summoned.getCurrentHealth() + ")");
+                ", 체력=" + summoned.getCurrentHealth() + ", 위치=" + summonPosition + ")");
 
-        // 효과 처리
         List<cardEffect> effects = card.getEffects();
         if (!effects.isEmpty()) {
-            if (targetSide == null) {
-                targetSide = side.getOpponent();
-            }
-            handleEffects(effects, side, targetSide, targetType, targetIndex, summoned, log);
+            if (targetSide == null) targetSide = side.getOpponent();
+            handleEffects(effects, targetSide, targetType, targetIndex, summoned, log);
         }
 
         return log;
     }
 
+    /** 기존 호출 호환용(끝에 소환) */
+    public BattleLog playCard(BattleSide side,
+                              card card,
+                              BattleSide targetSide,
+                              TargetType targetType,
+                              int targetIndex) {
+        return playCard(side, card, targetSide, targetType, targetIndex, Integer.MAX_VALUE);
+    }
+
     private void handleEffects(List<cardEffect> effects,
-                               BattleSide casterSide,
                                BattleSide targetSide,
                                TargetType targetType,
                                int targetIndex,
                                UnitState self,
                                BattleLog log) {
 
-        PlayerBattleState caster = gameState.getPlayerState(casterSide);
         PlayerBattleState targetOwner = gameState.getPlayerState(targetSide);
 
         for (cardEffect effect : effects) {
@@ -116,7 +102,6 @@ public class CardExecutor {
 
             switch (type) {
                 case TAUNT:
-                    // 소환 시에도 처리되지만, 중복 호출에 대비해 한 번 더 로깅
                     self.setTaunt(true);
                     log.add("[효과] " + self.getName() + " 은(는) 도발(TAUNT)을 보유합니다.");
                     break;
@@ -129,14 +114,13 @@ public class CardExecutor {
                     handleDamageToMonster(effect, targetOwner, targetType, targetIndex, log);
                     break;
 
+                // 요청대로 전부 무시
                 case HEAL_PLAYER:
                 case BUFF_ATTACK:
                 case BUFF_DEFENSE:
                 case DEBUFF_ATTACK:
                 case DEBUFF_DEFENSE:
-                    // 요청에 따라 이 효과들은 전부 무시
-                    log.add("[효과 무시] " + type +
-                            " 효과는 현재 게임 규칙에서 사용하지 않습니다.");
+                    log.add("[효과 무시] " + type + " 효과는 현재 게임 규칙에서 사용하지 않습니다.");
                     break;
 
                 default:
@@ -160,8 +144,7 @@ public class CardExecutor {
 
         hero.applyDamage(damage);
 
-        log.add("[효과] 영웅 \"" + hero.getName() + "\" 에게 " +
-                damage + " 의 직통 피해를 줍니다.");
+        log.add("[효과] 영웅 \"" + hero.getName() + "\" 에게 " + damage + " 의 직통 피해");
         log.add(" -> 체력: " + beforeHp + " -> " + hero.getCurrentHealth());
 
         if (hero.isDead()) {
@@ -179,6 +162,7 @@ public class CardExecutor {
             log.add("[효과 실패] DAMAGE_TO_MONSTER 는 유닛(TargetType.UNIT)을 대상으로 해야 합니다.");
             return;
         }
+
         List<UnitState> board = targetOwner.getBoard();
         if (targetIndex < 0 || targetIndex >= board.size()) {
             log.add("[효과 실패] DAMAGE_TO_MONSTER 대상 인덱스가 잘못되었습니다.");
@@ -190,9 +174,8 @@ public class CardExecutor {
         int beforeHp = target.getCurrentHealth();
         target.applyDamage(damage);
 
-        log.add("[효과] \"" + target.getName() + "\" 에게 " +
-                damage + " 의 피해를 줍니다. (" + beforeHp + " -> " +
-                target.getCurrentHealth() + ")");
+        log.add("[효과] \"" + target.getName() + "\" 에게 " + damage +
+                " 피해 (" + beforeHp + " -> " + target.getCurrentHealth() + ")");
 
         if (target.isDead()) {
             board.remove(targetIndex);

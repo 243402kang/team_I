@@ -3,14 +3,6 @@ package game.battle;
 import java.util.List;
 import java.util.stream.Collectors;
 
-/**
- * 전투 행동(하수인의 공격)을 담당하는 엔진 클래스입니다.
- *
- * - 하수인 -> 하수인 공격
- * - 하수인 -> 영웅 공격
- * - 도발(TAUNT) 룰 적용
- *
- */
 public class CombatEngine {
 
     private final GameState gameState;
@@ -21,23 +13,30 @@ public class CombatEngine {
     }
 
     public CombatEngine(GameState gameState, DamageCalculator calculator) {
-        if (gameState == null) {
-            throw new IllegalArgumentException("GameState 는 null 일 수 없습니다.");
-        }
-        if (calculator == null) {
-            throw new IllegalArgumentException("DamageCalculator 는 null 일 수 없습니다.");
-        }
+        if (gameState == null) throw new IllegalArgumentException("GameState 는 null 일 수 없습니다.");
+        if (calculator == null) throw new IllegalArgumentException("DamageCalculator 는 null 일 수 없습니다.");
         this.gameState = gameState;
         this.damageCalculator = calculator;
     }
 
-    public GameState getGameState() {
-        return gameState;
+    public GameState getGameState() { return gameState; }
+
+    /**UI가 쓰기 쉬운 통합 공격 */
+    public BattleLog attack(BattleSide attackerSide,
+                            int attackerIndex,
+                            TargetType targetType,
+                            int targetIndex) {
+        if (targetType == TargetType.HERO) {
+            return unitAttackHero(attackerSide, attackerIndex);
+        }
+        if (targetType == TargetType.UNIT) {
+            return unitAttackUnit(attackerSide, attackerIndex, targetIndex);
+        }
+        BattleLog log = new BattleLog();
+        log.add("[공격 실패] targetType 이 NONE 입니다.");
+        return log;
     }
 
-    /**
-     * 하수인이 상대 하수인을 공격하는 행동을 수행합니다.
-     */
     public BattleLog unitAttackUnit(BattleSide attackerSide,
                                     int attackerIndex,
                                     int defenderIndex) {
@@ -59,12 +58,10 @@ public class CombatEngine {
         UnitState attacker = atkBoard.get(attackerIndex);
         UnitState defender = defBoard.get(defenderIndex);
 
-        // 공격 가능 여부 체크
         if (!canUnitAttack(attacker, log)) {
             return log;
         }
 
-        // 도발 룰 체크
         if (!isValidTauntTarget(defState, defender)) {
             log.add("[공격 실패] 상대가 도발 유닛을 보유 중이므로, 먼저 도발 유닛을 공격해야 합니다.");
             return log;
@@ -101,9 +98,6 @@ public class CombatEngine {
         return log;
     }
 
-    /**
-     * 하수인이 상대 영웅을 공격하는 행동을 수행합니다.
-     */
     public BattleLog unitAttackHero(BattleSide attackerSide,
                                     int attackerIndex) {
 
@@ -120,12 +114,10 @@ public class CombatEngine {
 
         UnitState attacker = atkBoard.get(attackerIndex);
 
-        // 공격 가능 여부 체크
         if (!canUnitAttack(attacker, log)) {
             return log;
         }
 
-        // 도발이 있는 경우 영웅을 직접 공격할 수 없음
         if (hasTauntUnit(defState)) {
             log.add("[공격 실패] 상대 필드에 도발 유닛이 있어 영웅을 직접 공격할 수 없습니다.");
             return log;
@@ -152,35 +144,27 @@ public class CombatEngine {
         return log;
     }
 
-    /**
-     * 하수인이 공격 가능한 상태인지 확인합니다.
-     */
     private boolean canUnitAttack(UnitState attacker, BattleLog log) {
         if (attacker == null) {
             log.add("[공격 실패] 존재하지 않는 유닛입니다.");
             return false;
         }
-
         if (attacker.isDead()) {
             log.add("[공격 실패] 이미 파괴된 유닛입니다.");
             return false;
         }
-
         if (attacker.getAttacksThisTurn() >= 1) {
             log.add("[공격 실패] " + attacker.getName() + " 은(는) 이번 턴에 더 이상 공격할 수 없습니다.");
             return false;
         }
-
         if (attacker.isSummonedThisTurn() && !attacker.isCharge()) {
             log.add("[공격 실패] " + attacker.getName() + " 은(는) 소환된 턴에는 공격할 수 없습니다.");
             return false;
         }
-
         if (attacker.getAttack() <= 0) {
             log.add("[공격 실패] " + attacker.getName() + " 은(는) 공격력이 0 입니다.");
             return false;
         }
-
         return true;
     }
 
@@ -188,19 +172,12 @@ public class CombatEngine {
         return state.getBoard().stream().anyMatch(UnitState::isTaunt);
     }
 
-    /**
-     * 상대 필드에 도발 유닛이 있다면,
-     * 해당 도발 유닛만 공격 가능한 타겟인지 체크합니다.
-     */
     private boolean isValidTauntTarget(PlayerBattleState defenderState, UnitState target) {
         List<UnitState> taunts = defenderState.getBoard().stream()
                 .filter(UnitState::isTaunt)
                 .collect(Collectors.toList());
 
-        if (taunts.isEmpty()) {
-            return true;
-        }
-
+        if (taunts.isEmpty()) return true;
         return target != null && target.isTaunt();
     }
 }

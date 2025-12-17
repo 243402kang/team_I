@@ -17,11 +17,9 @@ public class EnemyAI {
         this.combatEngine = new CombatEngine(gameState);
     }
 
-    /** ENEMY 메인 페이즈에서 할 행동: 카드 내기 -> 공격 */
     public BattleLog playEnemyMainPhase() {
         BattleLog log = new BattleLog();
 
-        // 1) 카드 최대한 사용
         while (true) {
             PlayerBattleState enemy = gameState.getPlayerState(BattleSide.ENEMY);
 
@@ -33,7 +31,6 @@ public class EnemyAI {
 
             card c = enemy.getHand().get(bestIdx);
 
-            // 타겟형(DAMAGE_TO_MONSTER)이면 상대 유닛 중 체력 낮은 것 선택
             TargetType targetType = TargetType.NONE;
             int targetIndex = -1;
 
@@ -48,26 +45,22 @@ public class EnemyAI {
                 }
             }
 
+            // AI도 "빈 자리"로 소환(그냥 끝에)
             BattleLog one = cardExecutor.playCard(
                     BattleSide.ENEMY, c,
                     BattleSide.PLAYER,
-                    targetType, targetIndex
+                    targetType, targetIndex,
+                    Integer.MAX_VALUE
             );
-
-            //  CardExecutor는 손패 제거를 안 하니까, 여기서 제거
-            enemy.removeCardFromHand(c);
 
             merge(log, one);
             if (gameState.isGameOver()) return log;
         }
 
-        // 2) 공격 (도발 강제 + 유리교환 판단)
         merge(log, attackWithTrade());
-
         return log;
     }
 
-    /** 도발 우선 + (도발 없으면) 유리교환 있으면 유닛 공격, 없으면 영웅 공격 */
     private BattleLog attackWithTrade() {
         BattleLog log = new BattleLog();
 
@@ -85,13 +78,10 @@ public class EnemyAI {
 
             PlayerBattleState player = gameState.getPlayerState(BattleSide.PLAYER);
 
-            // 1) 도발 강제
             int tauntIdx = firstTauntIndex(player.getBoard());
             if (tauntIdx >= 0) {
                 merge(log, combatEngine.unitAttackUnit(BattleSide.ENEMY, i, tauntIdx));
-            }
-            // 2) 도발 없으면 유리 교환 판단
-            else {
+            } else {
                 Integer tradeIdx = findBestTradeTargetIndex(attacker, player.getBoard());
                 if (tradeIdx != null) {
                     merge(log, combatEngine.unitAttackUnit(BattleSide.ENEMY, i, tradeIdx));
@@ -100,16 +90,12 @@ public class EnemyAI {
                 }
             }
 
-            // 공격 후 죽어서 리스트 당겨질 수 있으니 안전 처리
             if (i < enemy.getBoard().size() && enemy.getBoard().get(i) == attacker) {
                 i++;
             }
         }
-
         return log;
     }
-
-    // 카드 선택(점수화)
 
     private int pickBestPlayable(PlayerBattleState enemy) {
         int bestIdx = -1;
@@ -129,8 +115,6 @@ public class EnemyAI {
         }
         return bestIdx;
     }
-
-    // 타겟 선택 보조
 
     private int firstTauntIndex(List<UnitState> board) {
         for (int i = 0; i < board.size(); i++) {
@@ -152,13 +136,6 @@ public class EnemyAI {
         return best;
     }
 
-    /**
-     * 공격자(attacker)가 특정 defender를 공격할 때의 "교환 점수"를 보고
-     * score > 0 인 가장 좋은 타겟의 index를 반환합니다.
-     *
-     * score = (상대가 죽으면 상대 유닛 가치) - (내가 죽으면 내 유닛 가치)
-     * - score > 0: 손해 없는(유리한) 교환
-     */
     private Integer findBestTradeTargetIndex(UnitState attacker, List<UnitState> enemyBoard) {
         Integer bestIndex = null;
         int bestScore = Integer.MIN_VALUE;
@@ -179,16 +156,13 @@ public class EnemyAI {
                 bestIndex = i;
             }
         }
-
         return bestIndex;
     }
 
     private int unitValue(UnitState u) {
-        // 밸류 계산 공격력*2 + 현재체력
         return u.getAttack() * 2 + u.getCurrentHealth();
     }
-    // 로그 합치기
- 
+
     private void merge(BattleLog total, BattleLog child) {
         if (total == null || child == null) return;
         for (BattleLogEntry e : child.getEntries()) {

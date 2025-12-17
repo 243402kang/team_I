@@ -68,7 +68,6 @@ public class UnitState {
         this.summonedThisTurn = true; // 생성 시점 = 소환 시점이라고 가정
     }
 
-    // ==== 기본 getter/setter ====
 
     public String getInstanceId() {
         return instanceId;

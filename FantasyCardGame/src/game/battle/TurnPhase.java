@@ -1,8 +1,5 @@
 package game.battle;
 
-/**
- * 턴 시스템에서 사용하는 단계(Phase) 정의입니다.
- */
 public enum TurnPhase {
 
     /**

@@ -3,7 +3,6 @@ package game.battle;
 import java.util.List;
 
 /**
- * 하스스톤 스타일의 턴 시스템을 관리하는 클래스입니다.
  *
  * 책임:
  * - 턴 시작/종료 처리

@@ -11,7 +11,7 @@ import java.util.Map;
  * - 두 플레이어(PLAYER, ENEMY)의 PlayerBattleState
  * - 현재 턴을 진행 중인 쪽(BattleSide)
  * - 현재 턴 번호, 현재 턴 Phase
- * - 턴 시간 제한(예: 60초) 및 턴 시작 시각
+ * - 턴 시간 제한(예: 60초) 및 턴 시작
  */
 public class GameState {
 

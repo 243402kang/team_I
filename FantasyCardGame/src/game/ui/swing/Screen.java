@@ -45,6 +45,10 @@ public class Screen extends JPanel implements ComponentListener, KeyListener, Mo
             @Override
             public void run() {
                 repaint();
+                
+                if (escMenu.isVisible()) {
+                	return;
+                }
                 counting();
                 turnBtn();
 
@@ -94,6 +98,14 @@ public class Screen extends JPanel implements ComponentListener, KeyListener, Mo
     }
 
     private void turnBtn() {
+    	
+    	if (escMenu.isVisible()) {
+    		easy.hideTurnBtn();
+    		normal.hideTurnBtn();
+    		hard.hideTurnBtn();
+    		return;
+    	}
+    	
         if (stage == 2) easy.showTurnBtn();
         else easy.hideTurnBtn();
 
@@ -115,10 +127,8 @@ public class Screen extends JPanel implements ComponentListener, KeyListener, Mo
     @Override
     public void keyPressed(KeyEvent e) {
         if (e.getKeyCode() == KeyEvent.VK_ESCAPE) {
-            if (stage >= 2 || escMenu.isVisible()) {
                 escMenu.toggleMenu();
                 repaint();
-            }
         }
     }
 
@@ -127,8 +137,7 @@ public class Screen extends JPanel implements ComponentListener, KeyListener, Mo
     @Override
     public void mouseClicked(MouseEvent e) {
         if (stage == 0) {
-            if (stageTitle.getStageEnd())
-                stage = 1;
+            stage = 1;
             select.showButtons();
         }
     }

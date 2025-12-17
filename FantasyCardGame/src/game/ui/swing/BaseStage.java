@@ -59,11 +59,18 @@ public abstract class BaseStage {
 
     // UI 표시용 (GameState 남은시간에서 계산)
     protected int turnTimeSec = 60;
+    
+    private BufferedImage winImage;
+    private BufferedImage loseImage;
+    private boolean gameLose = false;
+    private boolean gameWin = false;
+    private int endTimer = 0;
 
     public BaseStage(Screen screen) {
         this.screen = screen;
         loadFieldImage();
         loadCardBack();
+        loadResultImage();
         FieldSlots();
 
         this.hand = new Hand();
@@ -78,7 +85,16 @@ public abstract class BaseStage {
     /**Screen에서 매 프레임(혹은 타이머) 호출하도록 만들 tick() */
     public void tick() {
         if (turnManager == null) return;
-
+        
+        if (gameWin || gameLose) {
+        	endTimer++;
+        	if (endTimer > 180) {
+        		reset();
+        		screen.returnSelect();
+        	}
+        	return;
+        }
+        
         // 남은 시간 표시 업데이트
         long remainMs = turnManager.getRemainingTurnTimeMillis();
         turnTimeSec = (int) Math.ceil(remainMs / 1000.0);
@@ -94,6 +110,7 @@ public abstract class BaseStage {
             syncAllToUI();
             screen.repaint();
         }
+        checkResult();
     }
 
     /**시간이 강제 종료되었을 때도 버튼 클릭과 동일한 턴 진행을 수행 */
@@ -234,7 +251,9 @@ public abstract class BaseStage {
         drawManaBar(g, 930, 700, playerMana);
 
         drawTurnTime(g);
+        
     }
+
 
     public void mousePressed(MouseEvent e) {
         int mx = e.getX();
@@ -484,8 +503,13 @@ public abstract class BaseStage {
         screen.add(endTurnBtn);
     }
 
-    public void showTurnBtn() { endTurnBtn.setVisible(true); }
-    public void hideTurnBtn() { endTurnBtn.setVisible(false); }
+    public void showTurnBtn() { 
+    	endTurnBtn.setVisible(true); 
+    }
+    
+    public void hideTurnBtn() {
+    	endTurnBtn.setVisible(false);
+    }
 
     protected void drawTurnTime(Graphics g) {
         int btnX = 1280 - 100 - 20;
@@ -527,7 +551,7 @@ public abstract class BaseStage {
         for (game.card.card c : eDeck) e.addCardToDeck(c);
 
         // 적 손패 10장 (AI 테스트용)
-        List<game.card.card> enemyHand = game.card.CardRepository.createShuffledDeck(10);
+        List<game.card.card> enemyHand = game.card.CardRepository.createShuffledDeck(0);
         for (game.card.card c : enemyHand) e.addCardToHand(c);
 
         this.gameState = new GameState(p, e);
@@ -567,18 +591,22 @@ public abstract class BaseStage {
         // PLAYER 보드 -> playerSlots
         List<UnitState> pBoard = gameState.getPlayerState(BattleSide.PLAYER).getBoard();
         for (int i = 0; i < pBoard.size() && i < playerSlots.length; i++) {
+            UnitState unit = pBoard.get(i);
             game.card.card base = pBoard.get(i).getBaseCard();
             int imageIndex = findImageIndexById(all, base.getId());
             CardUI ui = new CardUI(base, imgManager.getCardImage(imageIndex), 0, 0);
+            ui.setHp(unit.getCurrentHealth());
             playerSlots[i].setCard(ui);
         }
 
         // ENEMY 보드 -> bossSlots
         List<UnitState> eBoard = gameState.getPlayerState(BattleSide.ENEMY).getBoard();
         for (int i = 0; i < eBoard.size() && i < bossSlots.length; i++) {
+        	UnitState unit = eBoard.get(i);
             game.card.card base = eBoard.get(i).getBaseCard();
             int imageIndex = findImageIndexById(all, base.getId());
             CardUI ui = new CardUI(base, imgManager.getCardImage(imageIndex), 0, 0);
+            ui.setHp(unit.getCurrentHealth());
             bossSlots[i].setCard(ui);
         }
     }
@@ -589,4 +617,79 @@ public abstract class BaseStage {
         }
         return 0;
     }
+    
+    private void checkResult() {
+    	int playerHp = gameState.getPlayerState(BattleSide.PLAYER).getHero().getCurrentHealth();
+    	int bossHp = gameState.getPlayerState(BattleSide.ENEMY).getHero().getCurrentHealth();
+    	
+    	if (playerHp <= 0) {
+    		gameLose = true;
+    		gameWin = false;
+    		hideTurnBtn();
+    		MainFrame.bgplay("res/gameLose.mp3");
+    	} else if (bossHp <= 0) {
+    		gameWin = true;
+    		gameLose = false;
+    		hideTurnBtn();
+    		MainFrame.bgplay("res/gameWin.mp3");
+    	}
+    }
+    
+    private void loadResultImage() {
+        try {
+            File w = new File("res/gameWin.jpg"); 
+            
+            if (w.exists()) {
+                this.winImage = ImageIO.read(w);
+                System.out.println("승리 이미지 로딩 성공!");
+            } else {
+                System.out.println("승리 이미지 파일을 찾을 수 없음: " + w.getAbsolutePath());
+            }
+            
+            File l = new File("res/gameLose.jpg");
+            if (l.exists()) {
+                this.loseImage = ImageIO.read(l);
+                System.out.println("패배 이미지 로딩 성공!");
+            } else {
+                System.out.println("패배 이미지 파일을 찾을 수 없음: " + l.getAbsolutePath());
+            }
+            
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+    
+    public void endTurnBtn() {
+    	if (gameWin || gameLose) {
+    		endTurnBtn.setVisible(false);
+    		return;
+    	}
+    	endTurnBtn.setVisible(true);
+    }
+    
+    public void reset() {
+    	gameWin = false;
+    	gameLose = false;
+    	endTimer = 0;
+    	
+    	initBattle();
+    	syncAllToUI();
+    }
+    
+    public void drawResult(Graphics g){{
+    if (gameWin || gameLose) {
+
+        BufferedImage imgToDraw = null;
+        if (gameWin) imgToDraw = winImage;
+        else if (gameLose) imgToDraw = loseImage;
+
+        if (imgToDraw != null) {
+            int x = (1280 - imgToDraw.getWidth()) / 2;
+            int y = (800 - imgToDraw.getHeight()) / 2;
+            g.drawImage(imgToDraw, x, y, screen);
+        		} 
+    		}
+    	}
+    }
 }
+

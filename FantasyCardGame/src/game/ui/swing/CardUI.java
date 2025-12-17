@@ -25,6 +25,7 @@ public class CardUI {
     
     private int originX, originY;
     private boolean isDragging = false;
+    private int currentHp = -1;
 
     public CardUI(card data, BufferedImage image, int x, int y) {
         this.data = data;
@@ -33,6 +34,7 @@ public class CardUI {
         this.y = y;
         this.originX = x;
         this.originY = y;
+        this.currentHp = -1;
     }
 
     public void draw(Graphics g) {
@@ -49,8 +51,9 @@ public class CardUI {
             g2d.setColor(Color.RED);
             g2d.drawString(String.valueOf(data.getAttack()), x + 10, y + height - 10);
 
-            g2d.setColor(Color.BLUE);
-            g2d.drawString(String.valueOf(data.getDefense()), x + width - 25, y + height - 10);
+            g2d.setColor(Color.GREEN);
+            String hpText = (currentHp != -1) ? String.valueOf(currentHp) : String.valueOf(data.getDefense());
+            g2d.drawString(hpText, x + width - 25, y + height - 10);
 
             g2d.setColor(Color.YELLOW);
             g2d.drawString(String.valueOf(data.getCost()), x + 8, y + 20);
@@ -103,8 +106,12 @@ public class CardUI {
     public void setOnField(boolean onField) {
     	this.isOnField = onField;
     }
+    
     public boolean isOnField() {
     	return isOnField;
     }
     
+    public void setHp(int hp) {
+    	this.currentHp = hp;
+    }
 }

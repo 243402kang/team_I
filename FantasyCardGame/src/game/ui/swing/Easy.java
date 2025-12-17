@@ -56,5 +56,6 @@ public class Easy extends BaseStage {
         drawCharacter(g);
         
         if (hand != null) hand.draw(g);
+        drawResult(g);
     }
 }

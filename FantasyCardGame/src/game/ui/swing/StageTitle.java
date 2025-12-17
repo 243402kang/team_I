@@ -96,55 +96,40 @@ public class StageTitle {
 	}
 	
 	private int fight_y = 80;	
-	private int time_step = 800;	
+	private int time_step = 60;	
 	private int start_index = 0;	
 	private boolean blink = false;	
 	private int blink_time = 200;	
 	
+
 	public void draw(Graphics g, Screen screen) {	
-		g.drawImage(this.start_back, 0, sky_y, screen);
-		
-		if(sky_y >= -10) {
-		if(screen.getCount() % blink_time == 0) {	
-			blink = !blink;	 
-			if(blink)	
-				blink_time = 1000;	
-			else
-				blink_time = 200;	
-		}
-	}
-		if(blink) {	
-			g.drawImage(this.logo, 335, 100, screen);
-		}
-		
-		if(start_index == 0) {	
-			g.drawImage(this.start_card[0], 100, fight_y, screen);
-		}
-		else if(start_index == 1) {
-			g.drawImage(this.start_card[1], 100, fight_y, screen);
-		}
-		else if(start_index == 2) {
-			g.drawImage(this.start_card[2], 100, fight_y, screen);
-		}
-		else {
-			g.drawImage(this.start_card[3], 100, fight_y, screen);
-		}
-		
-		
-		if(screen.getCount() % time_step == 0) {	
-			start_index++;	
-			if(start_index >= 3) {	
-				start_index = 3;	
-				time_step = 20;	
-				if(sky_y <= -10) {
-					sky_y += 10;
-					fight_y += 10;	
-					}
-				}
-			}
-		}
-	
-	public boolean getStageEnd() {	
-		return sky_y >= -10;
+	    g.drawImage(this.start_back, 0, sky_y, screen);
+	    
+	    if(sky_y >= -10) {
+	        if(screen.getCount() % blink_time == 0) {	
+	            blink = !blink;	 
+	            if(blink)	
+	                blink_time = 60; 
+	            else
+	                blink_time = 20;	
+	        }
+	        if(blink) {	
+	            g.drawImage(this.logo, 335, 100, screen);
+	        }
+	    }
+	    int safeIndex = (start_index > 3) ? 3 : start_index; 
+	    g.drawImage(this.start_card[safeIndex], 100, fight_y, screen);
+	    
+	    if (start_index < 3) {
+	        if(screen.getCount() % time_step == 0) {	
+	            start_index++;	
+	        }
+	    } 
+	    else {
+	        if(sky_y <= -10) {
+	            sky_y += 5;   
+	            fight_y += 5; 
+	        }
+	    }
 	}
 }

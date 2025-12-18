@@ -181,7 +181,7 @@ public abstract class BaseStage {
 
     private void loadFieldImage() {
         try {
-            this.fieldImage = ImageIO.read(new File("res/gameField.jpg"));
+            this.fieldImage = ImageIO.read(getClass().getResource("/res/gameField.jpg"));
 
             this.boardWidth = 800;
             this.boardHeight = 450;
@@ -313,7 +313,7 @@ public abstract class BaseStage {
                     printLog(log);
 
                     placed = true;
-                    MainFrame.bgplay("res/cardDrop.mp3");
+                    MainFrame.bgplay("/res/cardDrop.mp3");
                     break;
                 }
             }
@@ -350,7 +350,7 @@ public abstract class BaseStage {
                         -1
                 );
                 printLog(log);
-                MainFrame.bgplay("res/attack.mp3");
+                MainFrame.bgplay("/res/attack.mp3");
             } else {
                 // (B) 적 유닛(슬롯) 공격
                 Integer defenderIndex = findBossSlotIndexAtPoint(e.getX(), e.getY());
@@ -362,7 +362,7 @@ public abstract class BaseStage {
                             defenderIndex
                     );
                     printLog(log);
-                    MainFrame.bgplay("res/attack.mp3");
+                    MainFrame.bgplay("/res/attack.mp3");
                 }
             }
 
@@ -640,34 +640,34 @@ public abstract class BaseStage {
     		gameLose = true;
     		gameWin = false;
     		hideTurnBtn();
-    		MainFrame.bgplay("res/gameLose.mp3");
+    		MainFrame.bgplay("/res/gameLose.mp3");
     	} else if (bossHp <= 0) {
     		gameWin = true;
     		gameLose = false;
     		hideTurnBtn();
-    		MainFrame.bgplay("res/gameWin.mp3");
+    		MainFrame.bgplay("/res/gameWin.mp3");
     	}
     }
     
     private void loadResultImage() {
         try {
-            File w = new File("res/gameWin.jpg"); 
-            
-            if (w.exists()) {
-                this.winImage = ImageIO.read(w);
+            java.net.URL winURL = getClass().getResource("/res/gameWin.jpg");
+            java.net.URL loseURL = getClass().getResource("/res/gameLose.jpg");
+
+            if (winURL != null) {
+                this.winImage = ImageIO.read(winURL);
                 System.out.println("승리 이미지 로딩 성공!");
             } else {
-                System.out.println("승리 이미지 파일을 찾을 수 없음: " + w.getAbsolutePath());
+                System.err.println("승리 이미지 파일을 찾을 수 없습니다: /res/gameWin.jpg");
             }
-            
-            File l = new File("res/gameLose.jpg");
-            if (l.exists()) {
-                this.loseImage = ImageIO.read(l);
+
+            if (loseURL != null) {
+                this.loseImage = ImageIO.read(loseURL);
                 System.out.println("패배 이미지 로딩 성공!");
             } else {
-                System.out.println("패배 이미지 파일을 찾을 수 없음: " + l.getAbsolutePath());
+                System.err.println("패배 이미지 파일을 찾을 수 없습니다: /res/gameLose.jpg");
             }
-            
+
         } catch (IOException e) {
             e.printStackTrace();
         }

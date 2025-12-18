@@ -27,12 +27,12 @@ public class StageTitle {
 	}
 	private void loadImage() {	
 		try {
-			this.start_card[0] = ImageIO.read(new File("res/start_card1.png"));
-			this.start_card[1] = ImageIO.read(new File("res/start_card2.png"));
-			this.start_card[2] = ImageIO.read(new File("res/start_card3.png"));
-			this.start_card[3] = ImageIO.read(new File("res/start_card4.png"));
-			this.start_back = ImageIO.read(new File("res/startBack.jpg"));
-			this.logo = ImageIO.read(new File("res/logo.png"));
+			this.start_card[0] = ImageIO.read(getClass().getResource("/res/start_card1.png"));
+			this.start_card[1] = ImageIO.read(getClass().getResource("/res/start_card2.png"));
+			this.start_card[2] = ImageIO.read(getClass().getResource("/res/start_card3.png"));
+			this.start_card[3] = ImageIO.read(getClass().getResource("/res/start_card4.png"));
+			this.start_back = ImageIO.read(getClass().getResource("/res/startBack.jpg"));
+			this.logo = ImageIO.read(getClass().getResource("/res/logo.png"));
 			
 			this.start_back = resizeImage(start_back, 1400);
 			this.logo = resizeImage(logo, 600);

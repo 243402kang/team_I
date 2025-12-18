@@ -38,7 +38,7 @@
 					screen.setDifficulty(Stage.Difficulty.EASY);
 					screen.startBattle(2);
 					hideButtons();
-					MainFrame.bgplay("res/cardShuffule.mp3");
+					MainFrame.bgplay("/res/cardShuffule.mp3");
 				}
 			});
 			
@@ -48,7 +48,7 @@
 					screen.setDifficulty(Stage.Difficulty.NORMAL);
 					screen.startBattle(3);
 					hideButtons();
-					MainFrame.bgplay("res/cardShuffule.mp3");
+					MainFrame.bgplay("/res/cardShuffule.mp3");
 				}
 			});
 			
@@ -58,7 +58,7 @@
 					screen.setDifficulty(Stage.Difficulty.HARD);
 					screen.startBattle(4);
 					hideButtons();
-					MainFrame.bgplay("res/cardShuffule.mp3");
+					MainFrame.bgplay("/res/cardShuffule.mp3");
 				}
 			});
 			
@@ -69,7 +69,7 @@
 		
 		private void loadImage() {
 			try {
-				this.select = ImageIO.read(new File("res/selectBack.jpg"));
+				this.select = ImageIO.read(getClass().getResource("/res/selectBack.jpg"));
 				
 				this.select = resizeImage(select, 1280);
 			} catch (IOException e) {

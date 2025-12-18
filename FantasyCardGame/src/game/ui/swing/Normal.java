@@ -21,9 +21,9 @@ public class Normal extends BaseStage {
     
     private void loadImage() {
         try {
-            this.NormalBack = ImageIO.read(new File("res/normalBack.jpg"));
-            this.NormalBoss = ImageIO.read(new File("res/normalBoss.png"));
-            this.Player = ImageIO.read(new File("res/player.png"));
+            this.NormalBack = ImageIO.read(getClass().getResource("/res/normalBack.jpg"));
+            this.NormalBoss = ImageIO.read(getClass().getResource("/res/normalBoss.png"));
+            this.Player = ImageIO.read(getClass().getResource("/res/player.png"));
             
             this.NormalBack = resizeImage(NormalBack, 1280);
             this.NormalBoss = resizeImage(NormalBoss, 200);

@@ -99,7 +99,7 @@ public class Hand {
 
             isExpanded = !isExpanded;
             arrangeCards(isExpanded);
-            MainFrame.bgplay("res/card.mp3");
+            MainFrame.bgplay("/res/card.mp3");
             return;
         }
 

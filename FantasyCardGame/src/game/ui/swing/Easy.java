@@ -21,9 +21,9 @@ public class Easy extends BaseStage {
     
     private void loadImage() {
         try {
-            this.EasyBack = ImageIO.read(new File("res/easyBack.jpg"));
-            this.EasyBoss = ImageIO.read(new File("res/easyBoss.png"));
-            this.Player = ImageIO.read(new File("res/player.png"));
+            this.EasyBack = ImageIO.read(getClass().getResource("/res/easyBack.jpg"));
+            this.EasyBoss = ImageIO.read(getClass().getResource("/res/easyBoss.png"));
+            this.Player = ImageIO.read(getClass().getResource("/res/player.png"));
             
             this.EasyBack = resizeImage(EasyBack, 1280);
             this.EasyBoss = resizeImage(EasyBoss, 200);

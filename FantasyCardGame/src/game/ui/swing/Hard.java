@@ -21,9 +21,9 @@ public class Hard extends BaseStage {
     
     private void loadImage() {
         try {
-            this.HardBack = ImageIO.read(new File("res/hardBack.jpg"));
-            this.HardBoss = ImageIO.read(new File("res/hardBoss.png"));
-            this.Player = ImageIO.read(new File("res/player.png"));
+            this.HardBack = ImageIO.read(getClass().getResource("/res/hardBack.jpg"));
+            this.HardBoss = ImageIO.read(getClass().getResource("/res/hardBoss.png"));
+            this.Player = ImageIO.read(getClass().getResource("/res/player.png"));
             
             this.HardBack = resizeImage(HardBack, 1280);
             this.HardBoss = resizeImage(HardBoss, 200);

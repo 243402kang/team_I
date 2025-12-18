@@ -35,7 +35,7 @@ public class CardImageManager {
 
     private void loadAndSliceImages() {
         try {
-            BufferedImage sheet = ImageIO.read(new File("res/units.jpg"));
+            BufferedImage sheet = ImageIO.read(getClass().getResource("/res/units.jpg"));
 
             int rows = 3;
             int cols = 8;
@@ -69,7 +69,7 @@ public class CardImageManager {
     
     public BufferedImage getCardBackImage() {
        try {
-            BufferedImage original = ImageIO.read(new File("res/cardBack.png"));
+            BufferedImage original = ImageIO.read(getClass().getResource("/res/cardBack.png"));
             
             BufferedImage resized = resizeImage(original, 300, 140);
             

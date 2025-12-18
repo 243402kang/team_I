@@ -12,6 +12,7 @@ import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.util.Timer;
 import java.util.TimerTask;
+import game.stage.Stage;
 
 import javax.swing.JPanel;
 
@@ -20,7 +21,9 @@ public class Screen extends JPanel implements ComponentListener, KeyListener, Mo
     private Graphics bg;
     private Image offScreen;
     private Dimension dim;
-
+    //난이도
+    private Stage.Difficulty difficulty = Stage.Difficulty.NORMAL;
+    
     private int countNumber = 0;
     private StageTitle stageTitle = new StageTitle();
     private Select select = new Select(this);
@@ -61,7 +64,15 @@ public class Screen extends JPanel implements ComponentListener, KeyListener, Mo
 
         select.hideButtons();
     }
+    
+    public void startBattle(int stageNumber) {
+        this.stage = stageNumber;
 
+        if (stageNumber == 2) easy.reset();
+        else if (stageNumber == 3) normal.reset();
+        else if (stageNumber == 4) hard.reset();
+    }
+    
     public void returnSelect() {
         this.stage = 1;
         select.showButtons();
@@ -114,6 +125,14 @@ public class Screen extends JPanel implements ComponentListener, KeyListener, Mo
 
         if (stage == 4) hard.showTurnBtn();
         else hard.hideTurnBtn();
+    }
+    //난이도 게터/세터
+    public void setDifficulty(Stage.Difficulty difficulty) {
+        this.difficulty = difficulty;
+    }
+
+    public Stage.Difficulty getDifficulty() {
+        return difficulty;
     }
 
     @Override

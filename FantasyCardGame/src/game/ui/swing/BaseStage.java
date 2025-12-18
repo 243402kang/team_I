@@ -33,6 +33,7 @@ import game.battle.PlayerBattleState;
 import game.battle.TurnManager;
 import game.battle.TargetType;
 import game.battle.UnitState;
+import game.stage.Stage;
 
 public abstract class BaseStage {
 
@@ -536,9 +537,10 @@ public abstract class BaseStage {
     }
 
     private void initBattle() {
-        // 영웅(체력 20 고정)
+    	game.stage.Stage.Difficulty d = screen.getDifficulty();
+        System.out.println(d);
         game.battle.HeroState pHero = new game.battle.HeroState("PLAYER");
-        game.battle.HeroState eHero = new game.battle.HeroState("ENEMY");
+        game.battle.HeroState eHero = new game.battle.HeroState("ENEMY", d.enemyHp);
 
         PlayerBattleState p = new PlayerBattleState(pHero);
         PlayerBattleState e = new PlayerBattleState(eHero);
@@ -550,9 +552,21 @@ public abstract class BaseStage {
         List<game.card.card> eDeck = game.card.CardRepository.createShuffledDeck(20);
         for (game.card.card c : eDeck) e.addCardToDeck(c);
 
-        // 적 손패 10장 (AI 테스트용)
+        
         List<game.card.card> enemyHand = game.card.CardRepository.createShuffledDeck(0);
         for (game.card.card c : enemyHand) e.addCardToHand(c);
+        
+        //적 멀리건(난이도 영향 O)
+        for (int i = 0; i < d.enemyStartHand; i++) {
+            e.drawCardWithFatigue();
+        }
+        //player 멀리건(난이도 영향 O)
+        for (int i = 0; i < d.playerStartHand; i++) {
+            p.drawCardWithFatigue();
+        }
+        
+        e.setMaxMana(Math.max(0, d.enemyStartMana - 1));
+        e.setCurrentMana(0);
 
         this.gameState = new GameState(p, e);
         this.turnManager = new TurnManager(gameState);

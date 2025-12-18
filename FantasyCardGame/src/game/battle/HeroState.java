@@ -59,4 +59,13 @@ public class HeroState {
                 "/" + maxHealth +
                 '}';
     }
+    //난이도 테스트
+    public HeroState(String name, int maxHealth) {
+        if (name == null || name.isEmpty()) {
+            throw new IllegalArgumentException("영웅 이름은 비어 있을 수 없습니다.");
+        }
+        this.name = name;
+        this.maxHealth = Math.max(1, maxHealth);
+        this.currentHealth = this.maxHealth;
+    }
 }
